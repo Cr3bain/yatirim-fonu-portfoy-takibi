@@ -15,7 +15,6 @@ import pandas as pd
 import numpy as np
 from turkce_karakter import turkish_upper
 
-
 locale.setlocale(locale.LC_ALL, "tr_TR")
 
 veritabani = "fonlarim.db"
@@ -64,9 +63,7 @@ class isportfoy:
                 os.path.getmtime(self.dosya)).strftime("%d-%m-%Y %H:%M:%S") + colorama.Fore.RESET)
         except:
             print(colorama.Fore.RED + "9) ÖNCE FİYAT GÜNCELLEMESİ ALIN." + colorama.Fore.RESET)
-
         print("0) Çıkış")
-
 
     def pmenu(self):
         print("1) Portföy Listem")
@@ -74,7 +71,6 @@ class isportfoy:
         print("3) Fon Çıkar")
         print("0) Geri")
         self.menu_secimi = 1
-
 
     def operator(self, giris):
         if giris == "1":
@@ -94,6 +90,83 @@ class isportfoy:
         else:
             print("Giriş hatalı")
 
+    def fonsecimi(self):
+        sor = input(
+            "Tefaş fon kodunu giriniz.\nListe için fon bilgisi girin veya tüm liste için boş bırakın. Geriye dönmek için 0 giriniz: ")
+        con = sqlite3.connect("fonlar.db")
+        cursor = con.execute("select * from tefas")
+        # pd.options.display.max_columns = None
+        pd.options.display.max_rows = None
+        df = (pd.DataFrame(cursor, columns=["FON ADI", "FON KODU"]))
+        df.index = np.arange(1, len(df) + 1)
+
+        if sor == "":
+            print(df, "\n")
+            return self.fonsecimi()
+        elif sor == "0":
+            return self.pmenu()
+        elif len(sor) > 3:
+            sor = turkish_upper(sor)
+            sonuc = df[df["FON ADI"].str.contains(sor)]
+            if sonuc.empty:
+                print(colorama.Fore.RED + "Fon bulunamadı" + colorama.Fore.RESET)
+                return self.fonsecimi()
+            else:
+                print(sonuc)
+                #print(sonuc.index)
+                print("Eklenecek fonun Tefaş kodunu giriniz ? (AAK şeklinde)")
+        else:
+            sor = sor.upper()
+            sonuc = df[df["FON KODU"].str.contains(sor)]
+            if sonuc.empty:
+                print(colorama.Fore.RED + "Girdiğiniz kod ile fon bulunamadı" + colorama.Fore.RESET)
+                return self.fonsecimi()
+            else:
+                print(sonuc)
+                fonkodu = (sonuc.iloc[0, 1])
+                print("TEFAŞ'dan fonun bilgileri alınıyor...")
+                print(self.tefasbilgi(fonkodu, "tablo"))
+                ekle = input("Fon eklensin mi ? E/H ").upper()
+                if ekle == "E":
+                    return self.fonekle(fonkodu, self.tefasbilgi(fonkodu, "fiyat"))
+                else:
+                    return self.pmenu()
+
+        # count_row = df.shape[0]
+
+    def tefasbilgi(self, fonkodu, istek):
+        url = f"https://www.tefas.gov.tr/FonAnaliz.aspx?FonKod={fonkodu}"
+        r = requests.get(url)
+        soup = BeautifulSoup(r.content, "lxml")
+        fon = (soup.find("span", id="MainContent_FormViewMainIndicators_LabelFund").find_next("ul")).text.splitlines()
+
+        # str_list = filter(None, fon)
+        # str_list = filter(bool, str_list)
+        # str_list = filter(len, str_list)
+        # str_list = filter(lambda item: item, str_list)
+        str_list = list(filter(None, fon))
+        #print(str_list)
+        if istek == "tablo":
+            lst = [str_list[1], str_list[3], str_list[5], str_list[7], str_list[9]]
+            df = pd.DataFrame(lst, index=[str_list[0], str_list[2], str_list[4], str_list[6], str_list[8]],
+                              columns=['TEFAŞ Fon Bilgisi'])
+            return df
+        elif istek == "fiyat":
+            return float(str_list[1].replace(",", "."))
+        else:
+            print("istek hatası")
+
+
+    def fonekle(self, fonkodu, fiyat):
+        #year, month, day = map(int, tarih.split('-'))  # Converting to database time format
+        #date = datetime(year, month, day)
+        date = datetime.today()
+        fon = Table(kullanici=self.kullanici, fonkodu=fonkodu, fiyat=self.tefasbilgi(fonkodu, "fiyat"), tarih=date)
+        self.session.add(fon)
+        self.session.commit()
+        print("Fon eklendi\n")
+
+
     def tum(self):
         print("\nAll Tasks:")
         rows = self.session.query(Table).order_by(Table.tarih).all()
@@ -104,45 +177,6 @@ class isportfoy:
         else:
             return print("Nothing to do!\n"), self.pmenu()
 
-    def fonsecimi(self):
-        sor = input("Fon adı veya kodunu giriniz (SERBEST FON veya AAK şeklinde).\nListe için boş bırakın. Geriye dönmek için 0 giriniz: ")
-        con = sqlite3.connect("fonlar.db")
-        cursor = con.execute("select * from tefas")
-        # pd.options.display.max_columns = None
-        pd.options.display.max_rows = None
-        df = (pd.DataFrame(cursor, columns=["FON ADI", "FON KODU"]))
-        df.index = np.arange(1, len(df) + 1)
-
-        if sor is None:
-            print(df)
-        elif sor == "0":
-            return self.pmenu()
-        elif len(sor) > 3:
-            sor = turkish_upper(sor)
-            sonuc = df[df["FON ADI"].str.contains(sor)]
-            if sonuc.empty:
-                print(colorama.Fore.RED +"Fon bulunamadı"+ colorama.Fore.RESET)
-                return self.fonsecimi()
-            else:
-                print(sonuc)
-        else:
-            sor = sor.upper()
-            sonuc = df[df["FON KODU"].str.contains(sor)]
-            if sonuc.empty:
-                print(colorama.Fore.RED +"Girdiğiniz kod ile fon bulunamadı"+ colorama.Fore.RESET)
-                return self.fonsecimi()
-            else:
-                print(sonuc)
-        #count_row = df.shape[0]
-
-
-    def fonekle(self, fon, fiyat, tarih):
-        year, month, day = map(int, tarih.split('-'))  # Converting to database time format
-        date = datetime(year, month, day)
-        fon = Table(hesap=self.kullanici, fonkodu=fon, fiyat=fiyat, tarih=date)
-        self.session.add(fon)
-        self.session.commit()
-        print("The task has been added!\n")
 
     def sil(self):
         print("\nChoose the number of the task you want to delete:")
@@ -160,7 +194,6 @@ class isportfoy:
         self.session.query(Table).filter(Table.fon == f"{rows[index - 1]}").delete()
         self.session.commit()
         print("The task has been deleted!\n")
-
 
     def karzarar(self):
         aranan = "İŞ PORTFÖY ÜÇÜNCÜ SERBEST (DÖVİZ) FON"
@@ -207,7 +240,6 @@ class isportfoy:
             elif giris == "0" and self.menu_secimi == 0:
                 print("Çıkış")
                 break
-
 
 
 isportfoy().baslat()
