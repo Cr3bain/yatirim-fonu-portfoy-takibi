@@ -169,17 +169,21 @@ class isportfoy:
         print("\nFon Portföyüm:")
         rows = self.session.query(Table).order_by(Table.id).all()
         if len(rows) != 0:
+            con = sqlite3.connect("fonlar.db")
             for i in range(len(rows)):
+                cursor = con.execute(f"select fonadi from tefas WHERE fonkodu ='{rows[i].fonkodu}'")
                 print(
-                    f'{i + 1}. Fon kodu: {rows[i].fonkodu}. Alış fiyatı: {rows[i].fiyat}. '
-                    f'Adet: {rows[i].adet}. Alış Tarihi: {rows[i].tarih.strftime("%d-%m-%Y")}')
-            print()
+                    f'{i + 1}. Fon kodu: {rows[i].fonkodu} - {cursor.fetchall()[0][0]} \n'
+                    f'Alış fiyatı: {colorama.Fore.RED}{rows[i].fiyat}{colorama.Fore.RESET}. '
+                    f'Adet: {colorama.Fore.RED}{rows[i].adet}{colorama.Fore.RESET}. '
+                    f'Alış Tarihi: {rows[i].tarih.strftime("%d-%m-%Y")}\n')
+
             return self.menu()
         else:
             return print("Nothing to do!\n"), self.menu()
 
     def sil(self):
-        print("\nChoose the number of the task you want to delete:")
+        print("\nSilmek için bir sıra numarası seçin:")
         rows = self.session.query(Table).order_by(Table.id).all()
         if len(rows) != 0:
             for i in range(len(rows)):
@@ -215,7 +219,8 @@ class isportfoy:
             # print(fontablosu.sum(axis = 0))
             print(fontablosu, "\n")
             kazanc = fontablosu['Kar-Zarar'].sum()
-            print("Fon portföyünüzün toplam kar-zarar durumu", float(kazanc).__round__(2), "TL'dir\n")
+            portfoy_degeri = float(fontablosu['Tefaş Fiyatı'].sum()) * fontablosu['Adet'].sum()
+            print("Portföyünüzün toplam değeri: ", float(portfoy_degeri.__round__(2)), " TL'dir. Kar-zarar durumu", float(kazanc).__round__(2), "TL'dir\n")
             return self.menu()
         else:
             return print("Portföyünüz boş. Önce fon ekleyin.\n"), self.menu()
