@@ -25,74 +25,61 @@ Base = declarative_base()
 class Table(Base):
     __tablename__ = 'fon'
     id = Column(Integer, primary_key=True)
-    kullanici = Column(String(length=255), default='default_value')
     fonkodu = Column(String(length=255), default='default_value')
     fiyat = Column(FLOAT, nullable=True)
-    tarih = Column(Date, default=datetime.today().date())
+    adet = Column(Integer(), default=1)
+    tarih = Column(Date, default=datetime.today().strftime('%d-%m-%Y'))
+    kullanici = Column(String(length=255), default='default_value')
 
     def __repr__(self):
-        return self.hesap
+        return self.kullanici
 
 
 Base.metadata.create_all(engine)
-
-fon_listesi = ("İŞ PORTFÖY ROBOFON TEMKİNLİ DEĞİŞKEN FON (İŞ PORTFÖY BİRİNCİ DEĞİŞKEN FON)",
-               "İŞ PORTFÖY ROBOFON DENGELİ DEĞİŞKEN FON (İŞ PORTFÖY İKİNCİ DEĞİŞKEN FON)",
-               "İŞ PORTFÖY ROBOFON ATAK DEĞİŞKEN FON (İŞ PORTFÖY ÜÇÜNCÜ DEĞİŞKEN FON)",
-               "İŞ PORTFÖY PARA PİYASASI FONU",
-               "İŞ PORTFÖY ODEABANK PARA PİYASASI FONU",
-               "İŞ PORTFÖY PRİVİA BANKACILIK DEĞİŞKEN ÖZEL FON",
-               "İŞ PORTFÖY KUMBARA HESABI KARMA ÖZEL FON",
-               "İŞ PORTFÖY ELEKTRİKLİ ARAÇLAR KARMA FON")
 
 
 class isportfoy:
     def __init__(self):
         self.aciklama = "Tefaş Portföy Takip Programı"
-        self.dosya = "isfonlar.txt"
+        self.dosya = "fonlar.db"
         self.Session = sessionmaker(bind=engine)
         self.session = self.Session()
-        self.menu_secimi = 0
         self.kullanici = "ogün"
 
     def menu(self):
-        print("1) Portföyümü Yönet")
+        print("1) Portföy Listem")
         print("2) Kar-Zarar Takibi")
+        print("3) Fon Ekle")
+        print("4) Fon Çıkar")
+        print("5) Fon Bilgilerini Güncelle")
         try:
-            print("9) Fiyat Güncellemesi: " + colorama.Fore.RED + "(Son güncelleme: %s) " % datetime.fromtimestamp(
+            print("9) Fon kodu güncellemesi " + colorama.Fore.RED + "(Son güncelleme: %s) " % datetime.fromtimestamp(
                 os.path.getmtime(self.dosya)).strftime("%d-%m-%Y %H:%M:%S") + colorama.Fore.RESET)
         except:
-            print(colorama.Fore.RED + "9) ÖNCE FİYAT GÜNCELLEMESİ ALIN." + colorama.Fore.RESET)
+            print(colorama.Fore.RED + "9) ÖNCE FON KODU GÜNCELLEMESİ ALIN." + colorama.Fore.RESET)
         print("0) Çıkış")
-
-    def pmenu(self):
-        print("1) Portföy Listem")
-        print("2) Fon Ekle")
-        print("3) Fon Çıkar")
-        print("0) Geri")
-        self.menu_secimi = 1
 
     def operator(self, giris):
         if giris == "1":
-            return self.pmenu()
+            return self.tum()
         elif giris == "2":
             return self.karzarar()
+        elif giris == "3":
+            return self.fonsecimi
+        elif giris == "4":
+            return self.sil()
+        elif giris == "5":
+            return self.fongucelle()
         elif giris == "9":
             return self.guncelleme()
-        elif giris == "11":
-            return self.tum()
-        elif giris == "12":
-            return self.fonsecimi()
-        elif giris == "13":
-            return self.sil()
-        elif giris == "10":
-            return self.menu()
         else:
             print("Giriş hatalı")
 
+    @property
     def fonsecimi(self):
         sor = input(
-            "Tefaş fon kodunu giriniz.\nListe için fon bilgisi girin veya tüm liste için boş bırakın. Geriye dönmek için 0 giriniz: ")
+            "Tefaş fon kodunu giriniz. (AAK şeklinde) \nListe için fon bilgisi girin veya tüm liste için boş bırakın. "
+            "Geriye dönmek için 0 giriniz: ")
         con = sqlite3.connect("fonlar.db")
         cursor = con.execute("select * from tefas")
         # pd.options.display.max_columns = None
@@ -102,142 +89,204 @@ class isportfoy:
 
         if sor == "":
             print(df, "\n")
-            return self.fonsecimi()
+            return self.fonsecimi
         elif sor == "0":
-            return self.pmenu()
+            return self.menu()
         elif len(sor) > 3:
             sor = turkish_upper(sor)
             sonuc = df[df["FON ADI"].str.contains(sor)]
             if sonuc.empty:
                 print(colorama.Fore.RED + "Fon bulunamadı" + colorama.Fore.RESET)
-                return self.fonsecimi()
+                return self.fonsecimi
             else:
                 print(sonuc)
-                #print(sonuc.index)
-                print("Eklenecek fonun Tefaş kodunu giriniz ? (AAK şeklinde)")
+                # print(sonuc.index)
+                return self.fonsecimi
+
         else:
             sor = sor.upper()
             sonuc = df[df["FON KODU"].str.contains(sor)]
             if sonuc.empty:
                 print(colorama.Fore.RED + "Girdiğiniz kod ile fon bulunamadı" + colorama.Fore.RESET)
-                return self.fonsecimi()
+                return self.fonsecimi
             else:
                 print(sonuc)
                 fonkodu = (sonuc.iloc[0, 1])
                 print("TEFAŞ'dan fonun bilgileri alınıyor...")
-                print(self.tefasbilgi(fonkodu, "tablo"))
-                ekle = input("Fon eklensin mi ? E/H ").upper()
-                if ekle == "E":
+
+                print(self.tefasbilgi(fonkodu, "tablo"), "\n")
+                ekle = input("Fon portföyünüze eklensin mi ? E/H ").upper()
+                if "E" == ekle:
                     return self.fonekle(fonkodu, self.tefasbilgi(fonkodu, "fiyat"))
                 else:
-                    return self.pmenu()
+                    return self.menu()
 
         # count_row = df.shape[0]
 
     def tefasbilgi(self, fonkodu, istek):
         url = f"https://www.tefas.gov.tr/FonAnaliz.aspx?FonKod={fonkodu}"
         r = requests.get(url)
-        soup = BeautifulSoup(r.content, "lxml")
-        fon = (soup.find("span", id="MainContent_FormViewMainIndicators_LabelFund").find_next("ul")).text.splitlines()
+        if r.status_code == 200:
+            soup = BeautifulSoup(r.content, "lxml")
+            fon = (
+                soup.find("span", id="MainContent_FormViewMainIndicators_LabelFund").find_next("ul")).text.splitlines()
 
-        # str_list = filter(None, fon)
-        # str_list = filter(bool, str_list)
-        # str_list = filter(len, str_list)
-        # str_list = filter(lambda item: item, str_list)
-        str_list = list(filter(None, fon))
-        #print(str_list)
-        if istek == "tablo":
-            lst = [str_list[1], str_list[3], str_list[5], str_list[7], str_list[9]]
-            df = pd.DataFrame(lst, index=[str_list[0], str_list[2], str_list[4], str_list[6], str_list[8]],
-                              columns=['TEFAŞ Fon Bilgisi'])
-            return df
-        elif istek == "fiyat":
-            return float(str_list[1].replace(",", "."))
+            str_list = filter(None, fon)
+            str_list = filter(bool, str_list)
+            str_list = filter(len, str_list)
+            str_list = filter(lambda item: item, str_list)
+            str_list = list(filter(None, str_list))
+            # print(str_list)
+
+            if istek == "tablo":
+                lst = [str_list[1], str_list[3], str_list[5], str_list[7], str_list[9]]
+                df = pd.DataFrame(lst, index=[str_list[0], str_list[2], str_list[4], str_list[6], str_list[8]],
+                                  columns=['TEFAŞ Fon Bilgisi'])
+                return df
+            elif istek == "fiyat":
+                return float(str_list[1].replace(",", "."))
+            elif istek == "kategori":
+                return str_list[8]
+            else:
+                print("istek hatası")
         else:
-            print("istek hatası")
-
+            return self.hata("TEFAŞ sitesine bağlanılamadı...")
 
     def fonekle(self, fonkodu, fiyat):
-        #year, month, day = map(int, tarih.split('-'))  # Converting to database time format
-        #date = datetime(year, month, day)
+        # year, month, day = map(int, tarih.split('-'))  # Converting to database time format
+        # date = datetime(year, month, day)
         date = datetime.today()
-        fon = Table(kullanici=self.kullanici, fonkodu=fonkodu, fiyat=self.tefasbilgi(fonkodu, "fiyat"), tarih=date)
+        adet = int(input("Portföyünüze kaç adet eklensin? "))
+        fon = Table(kullanici=self.kullanici, fonkodu=fonkodu, fiyat=fiyat, tarih=date, adet=adet)
         self.session.add(fon)
         self.session.commit()
-        print("Fon eklendi\n")
 
+        print(f"{colorama.Fore.RED}Portföyünüze {fonkodu} kodlu fon, {fiyat} TL fiyatıyla, {adet} adet, "
+              f"{date.strftime('%d-%m-%Y')} tarihli olarak eklenmiştir{colorama.Fore.RESET}\n")
+        return self.menu()
 
     def tum(self):
-        print("\nAll Tasks:")
-        rows = self.session.query(Table).order_by(Table.tarih).all()
+        print("\nFon Portföyüm:")
+        rows = self.session.query(Table).order_by(Table.id).all()
         if len(rows) != 0:
             for i in range(len(rows)):
-                print(f'{i + 1}. {rows[i].fonadi}. {rows[i].tarih.day} {rows[i].tarih.strftime("%b")}')
+                print(
+                    f'{i + 1}. Fon kodu: {rows[i].fonkodu}. Alış fiyatı: {rows[i].fiyat}. '
+                    f'Adet: {rows[i].adet}. Alış Tarihi: {rows[i].tarih.strftime("%d-%m-%Y")}')
             print()
+            return self.menu()
         else:
-            return print("Nothing to do!\n"), self.pmenu()
-
+            return print("Nothing to do!\n"), self.menu()
 
     def sil(self):
         print("\nChoose the number of the task you want to delete:")
-        rows = self.session.query(Table).order_by(Table.tarih).all()
+        rows = self.session.query(Table).order_by(Table.id).all()
         if len(rows) != 0:
             for i in range(len(rows)):
-                print(f'{i + 1}. {rows[i].task}. {rows[i].tarih.day} {rows[i].tarih.strftime("%b")}')
-            self.silelim(int(input()))
+                print(
+                    f'{i + 1}. Fon kodu: {rows[i].fonkodu}. Alış fiyatı: {rows[i].fiyat}. '
+                    f'Adet: {rows[i].adet}. Alış Tarihi: {rows[i].tarih.strftime("%d-%m-%Y")}')
+            self.silelim(int(input("Sıra numarası girin: ")))
         else:
-            print("Nothing to delete!\n")
+            print("Portföyünüzde fon bulunmamaktadır!\n")
             return
 
     def silelim(self, index):
-        rows = self.session.query(Table).order_by(Table.tarih).all()
-        self.session.query(Table).filter(Table.fon == f"{rows[index - 1]}").delete()
+        # burayı çoklu fonlarda kontrol et
+        rows = self.session.query(Table).order_by(Table.id).all()
+        self.session.query(Table).filter(Table.id == f"{rows[index - 1].id}").delete()
         self.session.commit()
-        print("The task has been deleted!\n")
+        print("Fon girişi silindi!\n")
+        return self.menu()
 
     def karzarar(self):
-        aranan = "İŞ PORTFÖY ÜÇÜNCÜ SERBEST (DÖVİZ) FON"
-        kodu = aranan.replace(" ", "")
-        with open(self.dosya, "r", encoding="ISO-8859-9", ) as f:
-            content = f.read()
-            c = content.index(kodu)
-            #  fonadi = content[c:c + int(len(kodu))]
-            degeri = float(content[c + int(len(kodu)) + 15:c + int(len(kodu)) + 25])
-            f.close()
-        print(aranan)
-        print(degeri)
+        rows = self.session.query(Table).order_by(Table.id).all()
+        kolonlar = ["Fon Kodu", "Alış Fiyatı", "Tefaş Fiyatı", "Adet", "Tarih", "Kar-Zarar"]
+        if len(rows) != 0:
+            print("Tefaş'tan fon bilgilerini alıyor. Lütfen bekleyin...")
+            satirlar = []
+            for i in range(len(rows)):
+                veriler = [rows[i].fonkodu, rows[i].fiyat, self.tefasbilgi(rows[i].fonkodu, "fiyat"), rows[i].adet,
+                           rows[i].tarih.strftime("%d-%m-%Y"),
+                           ((self.tefasbilgi(rows[i].fonkodu, "fiyat") - rows[i].fiyat) * rows[i].adet).__round__(2)]
+                satirlar = pd.DataFrame([veriler], columns=kolonlar).append(satirlar)
+
+            fontablosu = pd.concat([satirlar], ignore_index=True)
+            # print(fontablosu.sum(axis = 0))
+            print(fontablosu, "\n")
+            kazanc = fontablosu['Kar-Zarar'].sum()
+            print("Fon portföyünüzün toplam kar-zarar durumu", float(kazanc).__round__(2), "TL'dir\n")
+            return self.menu()
+        else:
+            return print("Portföyünüz boş. Önce fon ekleyin.\n"), self.menu()
+
+    def fongucelle(self):
+        print("\nFon Güncelleme:")
+        rows = self.session.query(Table).order_by(Table.id).all()
+        if len(rows) != 0:
+            for i in range(len(rows)):
+                print(
+                    f'{i + 1}. Fon kodu: {rows[i].fonkodu}. Alış fiyatı: {rows[i].fiyat}. '
+                    f'Adet: {rows[i].adet}. Alış Tarihi: {rows[i].tarih.strftime("%d-%m-%Y")}')
+            print()
+            self.guncelleyelim(int(input("Sıra numarası girin: ")))
+        else:
+            return print("Nothing to do!\n"), self.menu()
+
+    def guncelleyelim(self, index):
+
+        # try ve expect leri tek tek ata
+        index -= 1
+        rows = self.session.query(Table).order_by(Table.id).all()
+        # rows = self.session.query(Table).filter(Table.id == index)
+        f = self.session.query(Table).filter(Table.id == rows[index].id).one()
+        try:
+            print("Boş bırakıldığında değer değişmeyecektir...")
+            f.fiyat = input(f"Adet fiyatı {rows[index].fiyat} TL. Yeni değer: ").replace(",", ".") or rows[index].fiyat
+            self.session.commit()
+            f.adet = input(f"Adet {rows[index].adet}. Yeni değer: ").replace(".", "") or rows[index].adet
+            self.session.commit()
+            tarih = input(f"Tarih {rows[index].tarih}. Yeni değer: YYYY-AA-GG olarak girin: ") or rows[index].tarih
+            year, month, day = map(int, tarih.split('-'))
+            f.tarih = datetime(year, month, day)
+            self.session.commit()
+        except:
+            print("Güncelleme esnasında hata oluştur...")
+        print("\n")
+        print(f'{index + 1}. Fon kodu: {rows[index].fonkodu}. Alış fiyatı: {rows[index].fiyat} '
+              f'Adet: {rows[index].adet}. Alış Tarihi: {rows[index].tarih.strftime("%d-%m-%Y")}')
+        print("\n")
+        # if len(rows) != 0:
+        #    for i in range(len(rows)):
+        #        print(
+        #            f'{i + 1}. Fon kodu: {rows[i].fonkodu}. Alış fiyatı: {rows[i].fiyat}. '
+        #            f'Adet: {rows[i].adet}. Alış Tarihi: {rows[i].tarih.strftime("%d-%m-%Y")}')
+        #    print()
+        #    return self.menu()
+        # else:
+        #    return print("Nothing to do!\n"), self.menu()
         return self.menu()
 
     def guncelleme(self):
-        url = "https://www.isportfoy.com.tr/tr/yatirim-fonlari"
-        r = requests.get(url)
-        print(r.status_code)
-        if r.status_code == 200:
-            soup = BeautifulSoup(r.text, 'html5lib')
-            fonlar = soup.findAll('table')[0].findAll("tr")[3:]
-            with open(self.dosya, "w", encoding="ISO-8859-9") as f:
-                # line = int(0)
-                for fon in fonlar:
-                    fon = str(fon.text)
-                    f.writelines(fon.replace(" ", ""))
-                # line += 1
-            f.close()
-        else:
-            print("Fon fiyatlarının güncellemek için {} sitesine ulaşılamıyor".format(url))
+        import fon_listesi_indir
+        import excel_to_sql
+        fon_listesi_indir.__dir__()
+        excel_to_sql.__dir__()
+        return self.menu()
+
+    def hata(self, mesaj):
+        print(mesaj)
+        return self.menu()
 
     def baslat(self):
         # print("baslat")
         self.menu()
         while True:
             giris = str(input().lower())
-            if giris != "0" and self.menu_secimi == 0:
+            if giris != "0":
                 self.operator(giris)
-            elif giris != "0" and self.menu_secimi == 1:
-                self.operator(str("1" + giris))
-            elif giris == "0" and self.menu_secimi == 1:
-                self.menu_secimi = 0
-                self.menu()
-            elif giris == "0" and self.menu_secimi == 0:
+
+            elif giris == "0":
                 print("Çıkış")
                 break
 
