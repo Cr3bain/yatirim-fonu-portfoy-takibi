@@ -55,8 +55,8 @@ class Portfoy:
         try:
             print("9) Fon kodu güncellemesi (Son güncelleme: %s) " % datetime.fromtimestamp(
                 os.path.getmtime(self.dosya)).strftime("%d-%m-%Y"))
-        except:
-            print("9) ÖNCE TEFAŞ FON KODU GÜNCELLEMESİ ALIN.")
+        except Exception as hata:
+            print("9) ÖNCE TEFAŞ FON KODU GÜNCELLEMESİ ALIN.", hata)
         print("B) Bilgi")
         print("0) Çıkış")
 
@@ -262,12 +262,13 @@ class Portfoy:
                 year, month, day = map(int, tarih.split('-'))
                 f.tarih = datetime(year, month, day)
                 self.session.commit()
-            except:
-                print("Güncelleme esnasında hata oluştur...")
+            except Exception as hata:
+                print("Güncelleme esnasında hata oluştur...", hata)
             print("\n")
             print(f'{index + 1}. Fon kodu: {rows[index].fonkodu}. Alış fiyatı: {rows[index].fiyat} '
                   f'Adet: {rows[index].adet}. Alış Tarihi: {rows[index].tarih.strftime("%d-%m-%Y")}')
             print("\n")
+            return self.menu()
         else:
             return self.menu()
 
