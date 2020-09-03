@@ -3,7 +3,7 @@ import urllib
 from urllib.request import urlretrieve
 
 
-def __dir__():
+def Indir():
     url = "https://www.takasbank.com.tr/plugins/ExcelExportTefasFundsTradingInvestmentPlatform?language=tr"
     r = requests.get(url, allow_redirects=True)
     if r.headers["Content-Type"] == "application/octet-stream":

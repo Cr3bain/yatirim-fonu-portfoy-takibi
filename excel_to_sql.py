@@ -3,12 +3,13 @@ import pandas as pd
 import os
 
 
-def __dir__():
-    os.remove("fonlar.db")
+def Excel():
+    try:
+        os.remove("fonlar.db")
+    except FileNotFoundError:
+        pass
     con = sqlite3.connect("fonlar.db")
     df = pd.read_excel("fonlar.xlsx", sheet_name=None,  names=["fonadi", "fonkodu"])
-
-
     try:
         for sheet in df:
             df[sheet].to_sql("tefas", con, schema=None, index=False)
@@ -19,5 +20,3 @@ def __dir__():
         con.commit()
         con.close()
         print("Fon veritabanı dosyası oluşturuldu\n")
-
-__dir__()
