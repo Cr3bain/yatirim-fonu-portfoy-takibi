@@ -3,9 +3,8 @@ import requests
 from bs4 import BeautifulSoup
 
 
-
-fonlar = []
 def Liste():
+    fonlar = []
     url = f"https://www.tefas.gov.tr/FonAnaliz.aspx"
     r = requests.get(url)
     if r.status_code == 200:
@@ -27,5 +26,7 @@ def Liste():
             fonlar[i].append(a['href'][-3:])
             i += 1
 
-    pd.DataFrame(fonlar).to_excel('fonlar.xlsx', header=["fonadi", "poz", "fonkodu"], index=False)
-    print("Fon listesi başarıyla oluşturuldu.")
+        pd.DataFrame(fonlar).to_excel('fonlar.xlsx', header=["fonadi", "poz", "fonkodu"], index=False)
+        print("Fon listesi başarıyla oluşturuldu.")
+    else:
+        print("Güncelleme için siteye erişilemiyor.")

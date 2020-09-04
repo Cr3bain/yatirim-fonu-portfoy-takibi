@@ -45,7 +45,7 @@ class Portfoy:
         self.Session = sessionmaker(bind=engine)
         self.session = self.Session()
         self.kullanici = "user"
-        self.poz = "EMK"  #YAT veya EMK
+        self.poz = "YAT"  # YAT veya EMK
 
     def menu(self):
         print("1) Portföy Listem")
@@ -56,8 +56,8 @@ class Portfoy:
         try:
             print("9) Fon kodu güncellemesi (Son güncelleme: %s) " % datetime.fromtimestamp(
                 os.path.getmtime(self.dosya)).strftime("%d-%m-%Y"))
-        except Exception as hata:
-            print("9) ÖNCE TEFAŞ FON KODU GÜNCELLEMESİ ALIN.", hata)
+        except FileNotFoundError:
+            print("9) FON LİSTESİ DOSYASI YOK. ÖNCE TEFAŞ FON KODU GÜNCELLEMESİ ALIN.")
         print("B) Bilgi")
         print("0) Çıkış")
 
@@ -80,12 +80,11 @@ class Portfoy:
             print("Giriş hatalı")
 
     def bilgi(self):
-        print("Program tefas.gov.tr adresi üzerinden çalışmaktadır ve fon fiyatlarını sadece bu sitede alır. \n"
-              "Tek tuşla fon portföyünüzün son durumunu öğrenmeniz amaçlanmıştır.\n"
-              "Kullanımı: 9 ile güncel fon listesi tefaş üzerinden çekilir ve işlem yapabileceğiniz fonların \n"
-              "kodları bilgisayarınıza indirilir. Sonraki adımda; tefaş fon kodu kullanarak veya fon adı  \n"
-              "ile aratarak, fonu portföyünüze ekleyebilirsiniz. Sonrasın bunları güncelleyebilir ve silebilirsiniz. \n"
-              "web: https://github.com/Cr3bain/Tefas eposta: ogun.gundogdu@gmail.com\n")
+        print("Program tefas.gov.tr adresi üzerinden çalışmaktadır ve fon bilgi ve fiyatlarını sadece bu sitede alır.\n"
+              "Kullanımı: 9 ile güncel fon listesi tefaş üzerinden çekilir ve işlem yapabileceğiniz fonlar \n"
+              "bilgisayarınıza indirilir. Sonraki adımda; tefaş fon kodu kullanarak veya fon adı  ile \n"
+              "aratarak fonu portföyünüze ekleyebilirsiniz. Eklediğiniz fonları güncelleyebilir ve silebilirsiniz. \n"
+              "web: https://github.com/Cr3bain   eposta: ogun.gundogdu@gmail.com\n")
         return self.menu()
 
     def fonsecimi(self):
@@ -217,7 +216,7 @@ class Portfoy:
                 veriler = [rows[i].fonkodu, fonadi, rows[i].fiyat, tefasfiyat, rows[i].adet,
                            (tefasfiyat * rows[i].adet).__round__(2),
                            ((tefasfiyat - rows[i].fiyat) * rows[i].adet).__round__(2),
-                           "%" + str(((tefasfiyat - rows[i].fiyat) / rows[i].fiyat * 100).__round__(2))]
+                           str(((tefasfiyat - rows[i].fiyat) / rows[i].fiyat * 100).__round__(2))]
                 satirlar = pd.DataFrame([veriler], columns=kolonlar).append(satirlar)
             fontablosu = pd.concat([satirlar], ignore_index=True)
             fontablosu.index = np.arange(1, len(fontablosu) + 1)
@@ -231,7 +230,7 @@ class Portfoy:
                   float(kazanc).__round__(2), "TL'dir\n")
             return self.menu()
         else:
-            return print("Portföyünüz boş. Önce fon ekleyin.\n"), self.menu()
+            return print("Portföyünüz boş. Önce fon eklemelisiniz.\n"), self.menu()
 
     def fongucelle(self):
         print("\nFon Güncelleme:")
@@ -292,7 +291,7 @@ class Portfoy:
                 self.operator(giris)
 
             elif giris == "0":
-                print("Çıkış")
+                print("Bol kazançlar")
                 break
 
 

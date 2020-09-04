@@ -17,4 +17,4 @@ def Excel():
             con.close()
             print("Fon listesi başarıyla veritabanına eklendi\n")
     except Exception as hata:
-        print("Hata", hata)
+        print("Dosya veritabanına yazılamadı", hata)
