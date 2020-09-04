@@ -9,14 +9,12 @@ def Excel():
     except FileNotFoundError:
         pass
     con = sqlite3.connect("fonlar.db")
-    df = pd.read_excel("fonlar.xlsx", sheet_name=None,  names=["fonadi", "fonkodu"])
+    df = pd.read_excel("fonlar.xlsx", sheet_name=None,  names=["fonadi", "poz", "fonkodu"])
     try:
         for sheet in df:
             df[sheet].to_sql("tefas", con, schema=None, index=False)
-    except ValueError:
-        print("Dosya tekrar oluşturuluyor")
-
-    finally:
-        con.commit()
-        con.close()
-        print("Fon veritabanı dosyası oluşturuldu\n")
+            con.commit()
+            con.close()
+            print("Fon listesi başarıyla veritabanına eklendi\n")
+    except Exception as hata:
+        print("Hata", hata)

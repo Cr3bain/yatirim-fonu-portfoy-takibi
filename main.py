@@ -45,13 +45,14 @@ class Portfoy:
         self.Session = sessionmaker(bind=engine)
         self.session = self.Session()
         self.kullanici = "user"
+        self.poz = "EMK"  #YAT veya EMK
 
     def menu(self):
         print("1) Portföy Listem")
         print("2) Kar-Zarar Takibi")
-        print("3) Portföyüne Fon Ekle")
-        print("4) Portföyünden Fon Sil")
-        print("5) Portföy Fon Bilgilerini Güncelle")
+        print("3) Fon Ekle")
+        print("4) Fon Çıkar")
+        print("5) Fon Bilgilerini Güncelle")
         try:
             print("9) Fon kodu güncellemesi (Son güncelleme: %s) " % datetime.fromtimestamp(
                 os.path.getmtime(self.dosya)).strftime("%d-%m-%Y"))
@@ -87,6 +88,42 @@ class Portfoy:
               "web: https://github.com/Cr3bain/Tefas eposta: ogun.gundogdu@gmail.com\n")
         return self.menu()
 
+    def fonsecimi(self):
+        sor = input(
+            "Tefaş fon kodunu giriniz. (AAK şeklinde)\n Fon kodu listesi için fon adı bilgisi girin "
+            "veya tüm liste için boş bırakın. Geriye dönmek için 0 giriniz:")
+        con = sqlite3.connect("fonlar.db")
+        cursor = con.execute(f"select fonadi, fonkodu from tefas WHERE poz='{self.poz}'")
+        pd.options.display.max_rows = None
+        pd.options.display.width = 0
+        df = (pd.DataFrame(cursor, columns=["FON ADI", "FON KODU"]))
+        df.index = np.arange(1, len(df) + 1)
+        sor = turkish_upper(sor)
+
+        if sor == "":
+            print(df, "\n")
+            return self.fonsecimi()
+        elif sor == "0":
+            return self.menu()
+        elif not df[df["FON KODU"].str.contains(sor)].empty:
+            sonuc = df[df["FON KODU"].str.contains(sor)]
+            print(sonuc)
+            fonkodu = (sonuc.iloc[0, 1])
+            print("TEFAŞ'dan fonun bilgileri alınıyor...")
+            print(self.tefasbilgi(fonkodu, "tablo"), "\n")
+            ekle = input("Fon portföyünüze eklensin mi ? E/H ").upper()
+            if "E" == ekle:
+                return self.fonekle(fonkodu, self.tefasbilgi(fonkodu, "fiyat"))
+            else:
+                return self.fonsecimi()
+        elif not df[df["FON ADI"].str.contains(sor)].empty:
+            print(df[df["FON ADI"].str.contains(sor)])
+            print("Fon kodunu giriniz. AAK şeklinde.")
+            return self.fonsecimi()
+        else:
+            print("Girdiğiniz kod ile fon bulunamadı")
+            return self.fonsecimi()
+
     def tefasbilgi(self, fonkodu, istek):
         url = f"https://www.tefas.gov.tr/FonAnaliz.aspx?FonKod={fonkodu}"
         r = requests.get(url)
@@ -114,61 +151,15 @@ class Portfoy:
         else:
             return self.hata("TEFAŞ sitesine bağlanılamadı...")
 
-    def fonsecimi(self):
-        sor = input(
-            "Tefaş fon kodunu giriniz. (AAK şeklinde)\n Fon kodu listesi için fon adı bilgisi girin "
-            "veya tüm liste için boş bırakın. Geriye dönmek için 0 giriniz:")
-        con = sqlite3.connect("fonlar.db")
-        cursor = con.execute("select * from tefas")
-        pd.options.display.max_rows = None
-        pd.options.display.width = 0
-        df = (pd.DataFrame(cursor, columns=["FON ADI", "FON KODU"]))
-        df.index = np.arange(1, len(df) + 1)
-        sor = turkish_upper(sor)
-
-        if sor == "":
-            print(df, "\n")
-            return self.fonsecimi()
-        elif sor == "0":
-            return self.menu()
-        elif not df[df["FON KODU"].str.contains(sor)].empty:
-            sonuc = df[df["FON KODU"].str.contains(sor)]
-            print(sonuc)
-            fonkodu = (sonuc.iloc[0, 1])
-            print("TEFAŞ'dan fonun bilgileri alınıyor...")
-            tablo = self.tefasbilgi(fonkodu, "tablo")
-            print(tablo)
-            ekle = input("Fon portföyünüze eklensin mi ? E/H ").upper()
-            if "E" == ekle:
-                return self.fonekle(fonkodu, tablo.iloc[0, 0])
-            else:
-                return self.fonsecimi()
-        elif not df[df["FON ADI"].str.contains(sor)].empty:
-            print(df[df["FON ADI"].str.contains(sor)])
-            print("Fon kodunu giriniz. AAK şeklinde.")
-            return self.fonsecimi()
-        else:
-            print("Girdiğiniz kod ile fon bulunamadı")
-            return self.fonsecimi()
-
     def fonekle(self, fonkodu, fiyat):
-        fiyat = fiyat.replace(",", ".")
-        date = datetime.today().strftime("%Y-%m-%d")
-        try:
-            print("Boş bırakıldığında değer değişmeyecektir...")
-            fiyat = input(f"Yeni bir değer girin veya {fiyat}TL Tefaş fiyatı için boş bırakın: ").replace(",", ".") or fiyat
-            adet = input(f"Fon adeti: ").replace(".", "") or 1
-            tarih = input(f"Yeni bir değeri YYYY-AA-GG olarak girin veya {date} için boş bırakın: ") or date
-            year, month, day = map(int, tarih.split('-'))
-            tarih_girisi = datetime(year, month, day)
-            fon = Table(kullanici=self.kullanici, fonkodu=fonkodu, fiyat=fiyat, tarih=tarih_girisi, adet=adet)
-            self.session.add(fon)
-            self.session.commit()
-            print(f"Portföyünüze {fonkodu} kodlu fon, {fiyat} TL fiyatıyla, {adet} adet, "
-                  f"{tarih_girisi.strftime('%Y-%m-%d')} tarihli olarak portföyünüze eklenmiştir. \n")
-        except Exception as hata:
-            print("Ekleme esnasında hata oluştur...", hata)
+        date = datetime.today()
+        adet = int(input("Portföyünüze kaç adet eklensin? "))
+        fon = Table(kullanici=self.kullanici, fonkodu=fonkodu, fiyat=fiyat, tarih=date, adet=adet)
+        self.session.add(fon)
+        self.session.commit()
 
+        print(f"Portföyünüze {fonkodu} kodlu fon, {fiyat} TL fiyatıyla, {adet} adet, "
+              f"{date.strftime('%d-%m-%Y')} tarihli olarak eklenmiştir.\n")
         return self.menu()
 
     def tum(self):
@@ -191,7 +182,7 @@ class Portfoy:
     def sil(self):
         rows = self.session.query(Table).order_by(Table.id).all()
         if len(rows) != 0:
-            print("Silmek için bir sıra numarası seçin.\n")
+            print("Silmek için bir sıra numarası seçin.")
             for i in range(len(rows)):
                 print(
                     f'{i + 1}. Fon: {rows[i].fonkodu} Alış fiyatı: {rows[i].fiyat}. '
@@ -209,7 +200,7 @@ class Portfoy:
             self.session.query(Table).filter(Table.id == f"{rows[index - 1].id}").delete()
             self.session.commit()
             print("Fon girişi silindi!\n")
-            return self.sil()
+            return self.menu()
 
     def karzarar(self):
         con = sqlite3.connect("fonlar.db")
@@ -283,9 +274,9 @@ class Portfoy:
             return self.menu()
 
     def guncelleme(self):
-        import fon_listesi_indir
+        import list_to_excel
         import excel_to_sql
-        fon_listesi_indir.Indir()
+        list_to_excel.Liste()
         excel_to_sql.Excel()
         return self.menu()
 
