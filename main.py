@@ -65,13 +65,13 @@ class Portfoy:
         if giris == "1":
             return self.tum()
         elif giris == "2":
-            return self.karzarar()
+            return self.kar_zarar()
         elif giris == "3":
-            return self.fonsecimi()
+            return self.fon_secimi()
         elif giris == "4":
             return self.sil()
         elif giris == "5":
-            return self.fongucelle()
+            return self.fon_guncelle()
         elif giris == "9":
             return self.guncelleme()
         elif giris == "B" or "b":
@@ -87,7 +87,7 @@ class Portfoy:
               "web: https://github.com/Cr3bain   eposta: ogun.gundogdu@gmail.com\n")
         return self.menu()
 
-    def fonsecimi(self):
+    def fon_secimi(self):
         sor = input(
             "Tefaş fon kodunu giriniz. (AAK şeklinde)\n Fon kodu listesi için fon adı bilgisi girin "
             "veya tüm liste için boş bırakın. Geriye dönmek için 0 giriniz:")
@@ -101,7 +101,7 @@ class Portfoy:
 
         if sor == "":
             print(df, "\n")
-            return self.fonsecimi()
+            return self.fon_secimi()
         elif sor == "0":
             return self.menu()
         elif not df[df["FON KODU"].str.contains(sor)].empty:
@@ -109,21 +109,21 @@ class Portfoy:
             print(sonuc)
             fonkodu = (sonuc.iloc[0, 1])
             print("TEFAŞ'dan fonun bilgileri alınıyor...")
-            print(self.tefasbilgi(fonkodu, "tablo"), "\n")
+            print(self.tefas_bilgi(fonkodu, "tablo"), "\n")
             ekle = input("Fon portföyünüze eklensin mi ? E/H ").upper()
             if "E" == ekle:
-                return self.fonekle(fonkodu, self.tefasbilgi(fonkodu, "fiyat"))
+                return self.fon_ekle(fonkodu, self.tefas_bilgi(fonkodu, "fiyat"))
             else:
-                return self.fonsecimi()
+                return self.fon_secimi()
         elif not df[df["FON ADI"].str.contains(sor)].empty:
             print(df[df["FON ADI"].str.contains(sor)])
             print("Fon kodunu giriniz. AAK şeklinde.")
-            return self.fonsecimi()
+            return self.fon_secimi()
         else:
             print("Girdiğiniz kod ile fon bulunamadı")
-            return self.fonsecimi()
+            return self.fon_secimi()
 
-    def tefasbilgi(self, fonkodu, istek):
+    def tefas_bilgi(self, fonkodu, istek):
         url = f"https://www.tefas.gov.tr/FonAnaliz.aspx?FonKod={fonkodu}"
         r = requests.get(url)
         if r.status_code == 200:
@@ -150,7 +150,7 @@ class Portfoy:
         else:
             return self.hata("TEFAŞ sitesine bağlanılamadı...")
 
-    def fonekle(self, fonkodu, fiyat):
+    def fon_ekle(self, fonkodu, fiyat):
         date = datetime.today()
         adet = int(input("Portföyünüze kaç adet eklensin? "))
         fon = Table(kullanici=self.kullanici, fonkodu=fonkodu, fiyat=fiyat, tarih=date, adet=adet)
@@ -201,7 +201,7 @@ class Portfoy:
             print("Fon girişi silindi!\n")
             return self.menu()
 
-    def karzarar(self):
+    def kar_zarar(self):
         con = sqlite3.connect("fonlar.db")
         rows = self.session.query(Table).order_by(Table.id).all()
         # , rows[i].tarih.strftime("%d-%m-%Y")  "Tarih",
@@ -212,7 +212,7 @@ class Portfoy:
             for i in range(len(rows)):
                 sql = con.execute("select fonadi from tefas where fonkodu like ?", ('%' + str(rows[i].fonkodu) + '%',))
                 fonadi = str([item for t in sql.fetchall() for item in t][0])[:20]
-                tefasfiyat = float(self.tefasbilgi(fonkodu=rows[i].fonkodu, istek='fiyat'))
+                tefasfiyat = float(self.tefas_bilgi(fonkodu=rows[i].fonkodu, istek='fiyat'))
                 veriler = [rows[i].fonkodu, fonadi, rows[i].fiyat, tefasfiyat, rows[i].adet,
                            (tefasfiyat * rows[i].adet).__round__(2),
                            ((tefasfiyat - rows[i].fiyat) * rows[i].adet).__round__(2),
@@ -232,7 +232,7 @@ class Portfoy:
         else:
             return print("Portföyünüz boş. Önce fon eklemelisiniz.\n"), self.menu()
 
-    def fongucelle(self):
+    def fon_guncelle(self):
         print("\nFon Güncelleme:")
         rows = self.session.query(Table).order_by(Table.id).all()
         if len(rows) != 0:
