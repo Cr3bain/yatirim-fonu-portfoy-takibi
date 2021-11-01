@@ -1,11 +1,14 @@
 # Fon Portfoy yonetimi
 Fon kar zarar takibi yapabilmenizi sağlayan bir uygulama.
 
-Uygulama internet üzerinden indirdiği MS excel dosyasını işler ve onu veritabına kaydeder. 
-İnternetten indiği bu fon listesi sayesinde kendi veritabanına fonları kodlarıyla ve sizin gireceğiniz alış fiyat ve adetleriyle işlemenizi sağlayarak bir portföy oluşturmanıza olanak tanır.
-Oluştuğulan bu portföy ile de tek tek fonların yeni fiyatlarını öğrenmek için tefas.gov.tr den bilgi çeker.
-pandas kütüphanesiyle de bunları toplalayak size bildirir.
+Uygulama internet üzerinden indirdiği fon bilglerinin bulunduğu MS excel dosyasını işler ve onu veritabına kaydeder. 
+
+Bu veritabanındaki fon listesi verilerindeki fon kodlarına sizin gireceğiniz alış fiyat ve adetleriyle bir portföy oluşturmanıza olanak tanır.
+
+Oluştuğulan bu portföy içerisindeki fon kodları ile tefas.gov.tr den bilgi, yani fonun son fiyatı çekilir.
+
+pandas kütüphanesiyle de bu veriler işlenir ve size bildirir.
+
 Sonuç olarak tamamen internet kaynaklı fon yönetim uygulamasıdır.
-Tüm bilgileri internet üzerinden alır.
 
 #BeautifulSoup #pandas #sqlalchemy #sqlite3 #numpy #requests kütüphaneleri kullanılmıştır.
