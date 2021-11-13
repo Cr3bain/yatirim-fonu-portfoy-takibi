@@ -1,4 +1,4 @@
-# Fon Portfoy yonetimi
+# Yatırım Fonları Portföy Takip Uygulaması
 Fon kar zarar takibi yapabilmenizi sağlayan bir uygulama.
 
 Uygulama, internet üzerinden fon bilgilerinin bulunduğu bir MS excel dosyası indirir ve fon bilgierini veritabına kaydeder. 
