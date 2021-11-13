@@ -12,3 +12,5 @@ pandas kütüphanesiyle de bu veriler işlenir ve size bildirir.
 Sonuç olarak tamamen internet kaynaklı fon yönetim uygulamasıdır.
 
 #BeautifulSoup #pandas #sqlalchemy #sqlite3 #numpy #requests kütüphaneleri kullanılmıştır.
+
+Yatırım Fonu Portföy yönetimi için hazırladığım ve android telefonlarda çalışan versiyonu için Google Play üzerinden FonTakip olarak aratabilir veya https://play.google.com/store/apps/details?id=com.gndg.fontakip linkini kullanarak telefonunuza indirebilirsiniz. Açık kaynak kodlu bir uygulama olmadığı için FonTakip uygulamasının kaynak kodlarının paylaşımı yapılmamaktadır.
