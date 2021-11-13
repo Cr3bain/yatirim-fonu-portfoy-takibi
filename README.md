@@ -1,11 +1,11 @@
 # Fon Portfoy yonetimi
 Fon kar zarar takibi yapabilmenizi sağlayan bir uygulama.
 
-Uygulama internet üzerinden indirdiği fon bilglerinin bulunduğu MS excel dosyasını işler ve onu veritabına kaydeder. 
+Uygulama, internet üzerinden fon bilgilerinin bulunduğu bir MS excel dosyası indirir ve fon bilgierini veritabına kaydeder. 
 
-Bu veritabanındaki fon listesi verilerindeki fon kodlarına sizin gireceğiniz alış fiyat ve adetleriyle bir portföy oluşturmanıza olanak tanır.
+Bu veritabanındaki fon kodlarını kullanarak sizin gireceğiniz alış fiyat ve adetleriyle bir portföy oluşturmanıza olanak tanır.
 
-Oluştuğulan bu portföy içerisindeki fon kodları ile tefas.gov.tr den bilgi, yani fonun son fiyatı çekilir.
+Oluştuğulan bu portföy içerisindeki fon kodları kullanılarak tefas.gov.tr den bilgi, yani fonun son fiyatı çekilir.
 
 pandas kütüphanesiyle de bu veriler işlenir ve size bildirir.
 
