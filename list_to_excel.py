@@ -5,27 +5,18 @@ from bs4 import BeautifulSoup
 
 def Liste():
     fonlar = []
-    url = f"https://www.tefas.gov.tr/FonAnaliz.aspx"
+    url = "https://www.tefas.gov.tr/FonAnaliz.aspx"
     r = requests.get(url)
     if r.status_code == 200:
         soup = BeautifulSoup(r.content, "html.parser")
-        fonkodu = (soup.find("div", id="MainContent_PanelFundList")).find_next("ul").find_all("a", FonKod="")
-        fon = (soup.find("div", id="MainContent_PanelFundList")).find_next("ul").text.splitlines()
-        str_list = filter(None, fon)
-        str_list = filter(bool, str_list)
-        str_list = filter(len, str_list)
-        str_list = filter(lambda item: item, str_list)
-        str_list = list(filter(None, str_list))
-        for i in str_list:
-            if str(i).find("EMEKLİLİK") > 0:
-                fonlar.append([i, "EMK"])
+        content = soup.find("div", id="MainContent_PanelFundList").find_next("ul")
+        for a in content.find_all("a"):
+            fon_adi = a.text.strip()
+            fon_kodu = a['href'][-3:]
+            if "EMEKLİLİK" in fon_adi:
+                fonlar.append([fon_adi, "EMK", fon_kodu])
             else:
-                fonlar.append([i, "YAT"])
-        i = 0
-        for a in fonkodu:
-            fonlar[i].append(a['href'][-3:])
-            i += 1
-
+                fonlar.append([fon_adi, "YAT", fon_kodu])
         pd.DataFrame(fonlar).to_excel('fonlar.xlsx', header=["fonadi", "poz", "fonkodu"], index=False)
         print("Fon listesi başarıyla oluşturuldu.")
     else:
