@@ -204,7 +204,6 @@ class Portfoy:
     def kar_zarar(self):
         con = sqlite3.connect("fonlar.db")
         rows = self.session.query(Table).order_by(Table.id).all()
-        # , rows[i].tarih.strftime("%d-%m-%Y")  "Tarih",
         kolonlar = ["Kodu", "Fon Adı", "Alış (TL)", "Tefaş (TL)", "Adet", "Değeri (TL)", "Getiri (TL)", "Getiri (%)"]
         if len(rows) != 0:
             print("Tefaş.gov.tr'den fon bilgilerini alıyor. Lütfen bekleyin...")
@@ -214,20 +213,19 @@ class Portfoy:
                 fonadi = str([item for t in sql.fetchall() for item in t][0])[:20]
                 tefasfiyat = float(self.tefas_bilgi(fonkodu=rows[i].fonkodu, istek='fiyat'))
                 veriler = [rows[i].fonkodu, fonadi, rows[i].fiyat, tefasfiyat, rows[i].adet,
-                           (tefasfiyat * rows[i].adet).__round__(2),
-                           ((tefasfiyat - rows[i].fiyat) * rows[i].adet).__round__(2),
-                           str(((tefasfiyat - rows[i].fiyat) / rows[i].fiyat * 100).__round__(2))]
-                satirlar = pd.DataFrame([veriler], columns=kolonlar).append(satirlar)
-            fontablosu = pd.concat([satirlar], ignore_index=True)
+                        (tefasfiyat * rows[i].adet).__round__(2),
+                        ((tefasfiyat - rows[i].fiyat) * rows[i].adet).__round__(2),
+                        str(((tefasfiyat - rows[i].fiyat) / rows[i].fiyat * 100).__round__(2))]
+                satirlar.append(veriler)
+            fontablosu = pd.DataFrame(satirlar, columns=kolonlar)
             fontablosu.index = np.arange(1, len(fontablosu) + 1)
             pd.options.display.max_rows = None
             pd.options.display.width = 0
             print(fontablosu, "\n")
             kazanc = fontablosu['Getiri (TL)'].sum()
-            tuples = list(zip(fontablosu['Tefaş (TL)'] * fontablosu['Adet']))
-            toplam = sum([item for t in tuples for item in t])
+            toplam = (fontablosu['Tefaş (TL)'] * fontablosu['Adet']).sum()
             print("Portföyünüzün toplam değeri", float(toplam.__round__(2)), "TL, toplamı getirisi",
-                  float(kazanc).__round__(2), "TL'dir\n")
+                float(kazanc).__round__(2), "TL'dir\n")
             return self.menu()
         else:
             return print("Portföyünüz boş. Önce fon eklemelisiniz.\n"), self.menu()
